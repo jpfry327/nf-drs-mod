@@ -1,7 +1,8 @@
 # nf-drs-mod — conventions
 
 Direct RNA-seq base modification pipeline (ONT pod5 → modification calls). DAG today:
-[your steps] → MULTIQC — no analysis step is wired yet, so nothing feeds MULTIQC.
+DORADO_BASECALLER → DORADO_ALIGNER → SAMTOOLS_SORT → SAMTOOLS_INDEX → { SAMTOOLS_STATS → MULTIQC,
+MODKIT_PILEUP }. Per-sample only; the cross-condition step (modkit dmr) is not wired yet.
 Most pipelines are quick workhorse runs; keep ceremony low. No nf-schema, no nf-core CLI.
 Params live only in `nextflow.config`. See `README.md` for the human walkthrough.
 

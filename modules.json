@@ -1,6 +1,7 @@
 {
   "remote": "https://github.com/jpfry327/nf-modules.git",
   "modules": {
-    "multiqc": { "sha": "ee0a9bcd5254b5b9c65574d20febe907c1516c14", "ref": "main", "date": "2026-09-10" }
+    "multiqc": { "sha": "ee0a9bcd5254b5b9c65574d20febe907c1516c14", "ref": "main", "date": "2026-09-10" },
+    "samtools/index": { "sha": "8759fbfbd426ee33f25c846a15c844cefc6c65b2", "ref": "main", "date": "2026-09-16" }
   }
 }

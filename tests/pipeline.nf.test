@@ -2,10 +2,10 @@
 //   nf-test test                 # all tests
 //   nf-test test --tag stub      # just this one
 //
-// No analysis step is wired yet, so nothing feeds MULTIQC: Channel.empty().collect()
-// never emits, MULTIQC is skipped, ch_versions stays empty and the run publishes NO
-// files at all. workflow.success is therefore the only assert that can pass right now.
-// Add path asserts here as steps get wired (see the add-test skill).
+// DAG: DORADO_BASECALLER -> DORADO_ALIGNER -> SAMTOOLS_SORT -> SAMTOOLS_INDEX
+//      -> { SAMTOOLS_STATS -> MULTIQC, MODKIT_PILEUP }
+// Path asserts below check the published stub outputs; add more as steps get wired
+// (see the add-test skill).
 nextflow_pipeline {
 
     name   "pipeline"
@@ -18,14 +18,22 @@ nextflow_pipeline {
 
         when {
             params {
-                input  = "$projectDir/tests/data/samplesheet.csv"
-                outdir = "$outputDir"
+                input     = "$projectDir/tests/data/samplesheet.csv"
+                reference = "$projectDir/tests/data/reference.fa"
+                outdir    = "$outputDir"
             }
         }
 
         then {
             assertAll(
-                { assert workflow.success }
+                { assert workflow.success },
+                { assert workflow.trace.tasks().size() == 13 },     // 2 samples x 6 steps + MULTIQC
+                { assert path("$outputDir/dorado_basecaller/sample1.bam").exists() },
+                { assert path("$outputDir/alignments/sample1.sorted.bam").exists() },
+                { assert path("$outputDir/alignments/sample1.sorted.bam.bai").exists() },
+                { assert path("$outputDir/modkit_pileup/sample2.bedmethyl").exists() },
+                { assert path("$outputDir/multiqc/multiqc_report.html").exists() },
+                { assert path("$outputDir/pipeline_info/software_versions.yml").exists() }
             )
         }
     }
