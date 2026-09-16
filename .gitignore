@@ -1,0 +1,37 @@
+# Nextflow runtime
+work/
+.nextflow/
+.nextflow.log*
+report-*.html
+timeline-*.html
+trace-*.txt
+dag-*.html
+*.pot
+
+# Pipeline outputs
+results/
+results*/
+output/
+outputs/
+
+# Singularity/Apptainer image cache
+*.sif
+*.img
+singularity/
+apptainer/
+
+# nf-test
+.nf-test/
+.nf-test.log
+
+# Environment / secrets
+.env
+*.local.config
+
+# Editor / OS cruft
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~

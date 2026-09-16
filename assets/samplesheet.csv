@@ -1,0 +1,5 @@
+sample,pod5_dir,condition
+WT_rep1,/data/pod5/WT_rep1,WT
+WT_rep2,/data/pod5/WT_rep2,WT
+KO_rep1,/data/pod5/KO_rep1,KO
+KO_rep2,/data/pod5/KO_rep2,KO

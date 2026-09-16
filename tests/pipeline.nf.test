@@ -1,0 +1,32 @@
+// Whole-pipeline stub test. Runs the DAG with -stub-run (no containers, no real tools).
+//   nf-test test                 # all tests
+//   nf-test test --tag stub      # just this one
+//
+// No analysis step is wired yet, so nothing feeds MULTIQC: Channel.empty().collect()
+// never emits, MULTIQC is skipped, ch_versions stays empty and the run publishes NO
+// files at all. workflow.success is therefore the only assert that can pass right now.
+// Add path asserts here as steps get wired (see the add-test skill).
+nextflow_pipeline {
+
+    name   "pipeline"
+    script "../main.nf"
+    tag    "stub"
+
+    test("stub run completes") {
+
+        options "-stub-run"
+
+        when {
+            params {
+                input  = "$projectDir/tests/data/samplesheet.csv"
+                outdir = "$outputDir"
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success }
+            )
+        }
+    }
+}
