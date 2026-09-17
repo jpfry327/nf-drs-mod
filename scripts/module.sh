@@ -11,9 +11,9 @@
 # <tool> is the library path under modules/jpfry327/, e.g. fastp or samtools/index.
 # NF_MODULES_REMOTE overrides the library remote. Needs git, curl, tar.
 #
-# Fetch = one GitHub archive tarball at the resolved SHA (no API rate limit). If that is ever
-# blocked, the fallback is: git clone --depth 1 --filter=blob:none --sparse "$REMOTE" && git
-# sparse-checkout set modules/jpfry327/<tool>.
+# Fetch = one GitHub archive tarball at the resolved SHA (no API rate limit). If that is
+# blocked (e.g. a proxy that only allows git), it falls back to a shallow sparse git clone
+# of modules/jpfry327/<tool> at the same SHA.
 
 set -euo pipefail
 
@@ -48,12 +48,29 @@ write_json() {
 }
 recorded() { entries | awk -F'\t' -v t="$1" -v col="$2" '$1 == t { print $col }'; }
 
+# Fallback when the archive download is blocked (proxy, offline mirror): a shallow sparse
+# clone of just modules/<org>/<tool> at the resolved SHA. Prints the checkout root.
+sparse_fetch() { # <sha> <tool> <tmp>
+    local sha="$1" tool="$2" tmp="$3" dir="$3/sparse"
+    git init -q "$dir" \
+        && git -C "$dir" remote add origin "$REMOTE" \
+        && git -C "$dir" sparse-checkout set --no-cone "modules/$LIB_ORG/$tool" \
+        && git -C "$dir" fetch -q --depth 1 origin "$sha" \
+        && git -C "$dir" checkout -q FETCH_HEAD \
+        && echo "$dir"
+}
+
 fetch() { # <sha> <tool>
-    local sha="$1" tool="$2" tmp src
+    local sha="$1" tool="$2" tmp root src
     tmp="$(mktemp -d)"
-    curl -fsSL "https://github.com/$(slug)/archive/${sha}.tar.gz" | tar -xz -C "$tmp" \
-        || { rm -rf "$tmp"; die "could not download library at $sha"; }
-    src="$tmp/$(ls "$tmp")/modules/$LIB_ORG/$tool"
+    if curl -fsSL "https://github.com/$(slug)/archive/${sha}.tar.gz" 2>/dev/null | tar -xz -C "$tmp" 2>/dev/null; then
+        root="$tmp/$(ls "$tmp")"
+    else
+        echo "module.sh: archive download failed, falling back to sparse git clone" >&2
+        root="$(sparse_fetch "$sha" "$tool" "$tmp")" \
+            || { rm -rf "$tmp"; die "could not download library at $sha"; }
+    fi
+    src="$root/modules/$LIB_ORG/$tool"
     [[ -f "$src/main.nf" ]] || { rm -rf "$tmp"; die "no module '$tool' in library at ${sha:0:7}"; }
     rm -rf "${DEST:?}/$tool"
     mkdir -p "$DEST/$tool"

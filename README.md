@@ -8,6 +8,23 @@ Design goals: know where everything goes, reuse modules from
 modules in place, keep tests optional. No nf-schema, no nf-core CLI, no lint gates.
 Add rigor per pipeline when one graduates to "publishable".
 
+## Pipeline
+```
+pod5_dir --> DORADO_BASECALLER (GPU, mod models) --> DORADO_ALIGNER --> SAMTOOLS_SORT --> SAMTOOLS_INDEX
+                                                                                              |
+                                                            +---------------------------------+
+                                                            |                                 |
+                                                     SAMTOOLS_STATS --> MULTIQC         MODKIT_PILEUP (bedMethyl per sample)
+```
+Required params (`nextflow.config`): `--reference` (FASTA, transcriptome or genome) and
+`--dorado_model` (dorado model complex, default `sup,m6A,pseU`: the simplex model plus the
+modification models, comma-joined; see `dorado download --list`). Outputs land in
+`results/dorado_basecaller/` (uBAM with MM/ML tags), `results/alignments/` (sorted BAM + bai),
+`results/modkit_pileup/` (bedMethyl), `results/multiqc/`.
+
+Not yet wired: the cross-`condition` comparison (`modkit dmr` over bgzipped/tabixed bedMethyl
+per condition group).
+
 ## Add a step
 1. **Get a module.** From the library:
    ```bash
@@ -33,8 +50,8 @@ docker run --rm --platform linux/amd64 -v "$PWD":/work -w /work nextflow/nextflo
 
 # real runs
 nextflow run . -profile test,docker                          # tiny run on a laptop
-nextflow run . -profile hpc --input samplesheet.csv -stub-run # cluster dry run
-nextflow run . -profile hpc --input samplesheet.csv           # cluster real run
+nextflow run . -profile hpc --input samplesheet.csv --reference ref.fa -stub-run # cluster dry run
+nextflow run . -profile hpc --input samplesheet.csv --reference ref.fa           # cluster real run
 ```
 Samplesheet columns: `sample,pod5_dir,condition`. `pod5_dir` is a **directory** of `.pod5`
 files for that sample, not a single file; `condition` is carried through on `meta`. Relative
@@ -62,7 +79,7 @@ modules.json              what's installed from the library, at which commit (sc
 scripts/module.sh         library module installer
 tests/                    nf-test stub test + tests/data samplesheet and placeholder files
 assets/samplesheet.csv    example samplesheet
-.claude/skills/           wire-module, new-module, add-test
+.claude/skills/           wire-module, new-module, add-test, metro-map
 ```
 
 Reusable modules are authored (and tested) in
